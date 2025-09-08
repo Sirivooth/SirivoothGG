@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>3D Game-like Controller Working</title>
+  <title>3D Game-like Controller with GUI</title>
   <style> body { margin:0; overflow:hidden; cursor: grab; } </style>
 </head>
 <body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 
 <script>
 const renderer = new THREE.WebGLRenderer({antialias:true});
@@ -26,7 +27,8 @@ const dirLight1 = new THREE.DirectionalLight(0xffffff,1.2);
 dirLight1.position.set(5,10,5); dirLight1.castShadow=true; scene.add(dirLight1);
 const dirLight2 = new THREE.DirectionalLight(0xffffff,0.8);
 dirLight2.position.set(-10,8,-10); dirLight2.castShadow=true; scene.add(dirLight2);
-scene.add(new THREE.AmbientLight(0xffffff,0.6));
+const ambientLight = new THREE.AmbientLight(0xffffff,0.6);
+scene.add(ambientLight);
 const pointLight = new THREE.PointLight(0xffffff,0.5,50);
 pointLight.position.set(0,10,0); pointLight.castShadow=true; scene.add(pointLight);
 
@@ -92,13 +94,46 @@ document.addEventListener('mousemove', e=>{
   }
 });
 
+// GUI
+const gui = new dat.GUI();
+
+const lightFolder = gui.addFolder("Lights");
+const dir1Folder = lightFolder.addFolder("Directional Light 1");
+dir1Folder.add(dirLight1.position, 'x', -20,20).name("X");
+dir1Folder.add(dirLight1.position, 'y', 0,20).name("Y");
+dir1Folder.add(dirLight1.position, 'z', -20,20).name("Z");
+dir1Folder.add(dirLight1, 'intensity', 0,5).name("Intensity");
+dir1Folder.add(dirLight1, 'castShadow').name("Cast Shadow");
+
+const dir2Folder = lightFolder.addFolder("Directional Light 2");
+dir2Folder.add(dirLight2.position, 'x', -20,20).name("X");
+dir2Folder.add(dirLight2.position, 'y', 0,20).name("Y");
+dir2Folder.add(dirLight2.position, 'z', -20,20).name("Z");
+dir2Folder.add(dirLight2, 'intensity', 0,5).name("Intensity");
+dir2Folder.add(dirLight2, 'castShadow').name("Cast Shadow");
+
+const ambientFolder = lightFolder.addFolder("Ambient Light");
+ambientFolder.add(ambientLight, 'intensity', 0,2).name("Intensity");
+
+const pointFolder = lightFolder.addFolder("Point Light");
+pointFolder.add(pointLight.position, 'x', -20,20).name("X");
+pointFolder.add(pointLight.position, 'y', 0,20).name("Y");
+pointFolder.add(pointLight.position, 'z', -20,20).name("Z");
+pointFolder.add(pointLight, 'intensity', 0,5).name("Intensity");
+pointFolder.add(pointLight, 'castShadow').name("Cast Shadow");
+
+lightFolder.open();
+dir1Folder.open();
+dir2Folder.open();
+ambientFolder.open();
+pointFolder.open();
+
 // Animate
 function animate(){
   requestAnimationFrame(animate);
   if(model){
     const moveSpeed=0.15;
 
-    // Direction based on WASD relative to camera
     let moveDir = new THREE.Vector3();
     if(keys.w) moveDir.z-=1;
     if(keys.s) moveDir.z+=1;
@@ -107,19 +142,12 @@ function animate(){
 
     if(moveDir.length()>0){
       moveDir.normalize();
-
-      // Rotate movement according to camera yaw
       moveDir.applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
-
-      // Move model
       model.position.add(moveDir.multiplyScalar(moveSpeed));
-
-      // Rotate model to face movement
       const angle=Math.atan2(moveDir.x, moveDir.z);
       model.rotation.y=angle;
     }
 
-    // Camera smooth follow
     const camOffset = new THREE.Vector3(0,3,10);
     const rotatedOffset = camOffset.clone().applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
     const camPos = model.position.clone().add(rotatedOffset);
